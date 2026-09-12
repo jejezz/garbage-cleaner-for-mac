@@ -10,10 +10,11 @@ class NavItem {
 
 /// Left rail: logo, icon buttons with a glowing gradient pill on the active one.
 class NavRail extends StatelessWidget {
-  const NavRail({super.key, required this.index, required this.onChanged, required this.items, required this.onQuit});
+  const NavRail({super.key, required this.index, required this.onChanged, required this.items, required this.onHide, required this.onQuit});
   final int index;
   final ValueChanged<int> onChanged;
   final List<NavItem> items;
+  final VoidCallback onHide;
   final VoidCallback onQuit;
 
   @override
@@ -31,6 +32,8 @@ class NavRail extends StatelessWidget {
           const SizedBox(height: 26),
           for (var i = 0; i < items.length; i++) _RailButton(item: items[i], active: i == index, onTap: () => onChanged(i)),
           const Spacer(),
+          // Hide = collapse back into the menubar; the app keeps running.
+          _RailButton(item: const NavItem(icon: CupertinoIcons.chevron_up_circle, label: 'Hide'), active: false, onTap: onHide, dim: true),
           _RailButton(item: const NavItem(icon: CupertinoIcons.power, label: 'Quit'), active: false, onTap: onQuit, dim: true),
         ],
       ),

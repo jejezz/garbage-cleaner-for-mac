@@ -17,7 +17,7 @@ Future<bool> showConfirm(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'dismiss',
-    barrierColor: Broom.bg0.withValues(alpha: 0.7),
+    barrierColor: Broom.bg0.withValues(alpha: 0.82),
     transitionDuration: const Duration(milliseconds: 200),
     transitionBuilder: (_, anim, _, child) => FadeTransition(
       opacity: anim,
@@ -27,6 +27,7 @@ Future<bool> showConfirm(
       child: SizedBox(
         width: 380,
         child: GlassCard(
+          opaque: true,
           padding: const EdgeInsets.fromLTRB(26, 26, 26, 22),
           glowColor: gradient.colors.first,
           child: DefaultTextStyle(

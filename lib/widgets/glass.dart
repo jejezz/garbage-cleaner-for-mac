@@ -4,22 +4,28 @@ import '../theme/broom_theme.dart';
 
 /// Frosted panel with a hairline border and a subtle top highlight.
 class GlassCard extends StatelessWidget {
-  const GlassCard({super.key, required this.child, this.padding = const EdgeInsets.all(16), this.radius = 16, this.glowColor});
+  const GlassCard({super.key, required this.child, this.padding = const EdgeInsets.all(16), this.radius = 16, this.glowColor, this.opaque = false});
   final Widget child;
   final EdgeInsets padding;
   final double radius;
   final Color? glowColor;
 
+  /// Solid background instead of see-through glass (dialogs, overlays).
+  final bool opaque;
+
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Broom.glass,
+        color: opaque ? Broom.bg1 : Broom.glass,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: Broom.border),
-        boxShadow: glowColor == null ? null : Broom.glow(glowColor!, blur: 40, alpha: 0.25),
-        gradient: const LinearGradient(
-          colors: [Color(0x1FFFFFFF), Color(0x0AFFFFFF)],
+        border: Border.all(color: opaque ? Broom.borderStrong : Broom.border),
+        boxShadow: [
+          if (opaque) const BoxShadow(color: Color(0x99000000), blurRadius: 40, offset: Offset(0, 16)),
+          if (glowColor != null) ...Broom.glow(glowColor!, blur: 40, alpha: 0.25),
+        ],
+        gradient: LinearGradient(
+          colors: opaque ? const [Color(0xFF221B4F), Color(0xFF141233)] : const [Color(0x1FFFFFFF), Color(0x0AFFFFFF)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),

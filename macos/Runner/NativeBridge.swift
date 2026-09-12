@@ -36,11 +36,16 @@ class NativeBridge {
       result(["trashed": trashed, "failed": failed])
 
     // Full Disk Access check. TCC has no public API, so the standard trick is
-    // to try reading a file that is only readable with FDA granted.
+    // to actually open a file that TCC protects. (isReadableFile/access(2)
+    // only checks POSIX bits and ignores TCC, so it must be a real open().)
     case "hasFullDiskAccess":
       let home = FileManager.default.homeDirectoryForCurrentUser
-      let probe = home.appendingPathComponent("Library/Safari/Bookmarks.plist")
-      result(FileManager.default.isReadableFile(atPath: probe.path))
+      let probes = ["Library/Application Support/com.apple.TCC/TCC.db",
+                    "Library/Safari/Bookmarks.plist"]
+      let granted = probes.contains { rel in
+        FileHandle(forReadingAtPath: home.appendingPathComponent(rel).path) != nil
+      }
+      result(granted)
 
     // Deep-link into System Settings > Privacy & Security > Full Disk Access.
     case "openFullDiskAccessSettings":

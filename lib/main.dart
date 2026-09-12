@@ -21,18 +21,22 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
 
-  // A popover-style window: no title bar, no traffic lights, not in the Dock
-  // (LSUIElement in Info.plist), hidden until the tray icon is clicked.
+  // No title bar, no traffic lights, not in the Dock (LSUIElement in
+  // Info.plist). Shown centered at launch; later opened under the tray icon.
   await windowManager.waitUntilReadyToShow(
     const WindowOptions(
       size: _windowSize,
+      center: true,
       titleBarStyle: TitleBarStyle.hidden,
       windowButtonVisibility: false,
       skipTaskbar: true,
       alwaysOnTop: true,
       backgroundColor: Color(0x00000000),
     ),
-    () async => windowManager.hide(),
+    () async {
+      await windowManager.show();
+      await windowManager.focus();
+    },
   );
 
   await trayManager.setIcon('assets/tray/tray_icon.png', isTemplate: true);
@@ -55,6 +59,11 @@ class App extends StatefulWidget {
 class _AppState extends State<App> with TrayListener, WindowListener {
   final state = AppState();
   int page = 0;
+
+  /// True while the window was opened from the tray icon: then it behaves like
+  /// a popover and dismisses on blur. At launch (or after "Open" from the menu)
+  /// it stays until the user hides or quits it.
+  bool popoverMode = false;
 
   @override
   void initState() {
@@ -83,7 +92,7 @@ class _AppState extends State<App> with TrayListener, WindowListener {
   void onTrayMenuItemClick(MenuItem item) {
     switch (item.key) {
       case 'open':
-        _showUnderTray();
+        _showUnderTray(popover: false);
       case 'quit':
         exit(0);
     }
@@ -91,17 +100,25 @@ class _AppState extends State<App> with TrayListener, WindowListener {
 
   /// Popover behaviour: clicking anywhere else dismisses the window.
   @override
-  void onWindowBlur() => windowManager.hide();
+  void onWindowBlur() {
+    if (popoverMode) _hide();
+  }
+
+  Future<void> _hide() async {
+    popoverMode = false;
+    await windowManager.hide();
+  }
 
   Future<void> _toggleWindow() async {
     if (await windowManager.isVisible()) {
-      await windowManager.hide();
+      await _hide();
     } else {
       await _showUnderTray();
     }
   }
 
-  Future<void> _showUnderTray() async {
+  Future<void> _showUnderTray({bool popover = true}) async {
+    popoverMode = popover;
     final tray = await trayManager.getBounds();
     if (tray != null) {
       await windowManager.setPosition(
@@ -144,6 +161,7 @@ class _AppState extends State<App> with TrayListener, WindowListener {
                         NavItem(icon: CupertinoIcons.sparkles, label: 'Junk'),
                         NavItem(icon: CupertinoIcons.square_grid_2x2_fill, label: 'Apps'),
                       ],
+                      onHide: _hide,
                       onQuit: () => exit(0),
                     ),
                     Expanded(

@@ -30,7 +30,7 @@ class _FreedOverlayState extends State<FreedOverlay> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Broom.bg0.withValues(alpha: 0.85),
+      color: Broom.bg0.withValues(alpha: 0.94),
       child: Stack(
         children: [
           Positioned.fill(
