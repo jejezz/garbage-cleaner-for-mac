@@ -1,0 +1,72 @@
+# Garbage Cleaner for Mac
+
+CleanMyMac-style menubar app built with **Flutter** (Dart UI) and a ~100-line
+**Swift bridge** for the few things Dart can't do on macOS.
+
+- Junk scan & remove (caches, logs, Xcode / Gradle / pub / npm / Homebrew caches …)
+- Application remover with leftover detection (`~/Library/*` by bundle id)
+- Disk usage ring (Finder-accurate: purgeable space counts as free)
+- One-click menubar popover (no Dock icon)
+- Everything is **moved to the Trash**, never hard-deleted.
+
+## Run
+
+```bash
+flutter run -d macos
+```
+
+Click the trash icon in the menubar. Right-click for Quit.
+
+## Layout
+
+```
+lib/
+  main.dart                     tray icon + popover window + sidebar navigation
+  core/
+    scan_targets.dart           ← THE list of junk categories. Add entries here.
+    scanner.dart                sizes targets with `du -sk` (fast on 500k-file trees)
+    app_scanner.dart            lists /Applications, finds leftovers per bundle id
+    app_state.dart              ChangeNotifier the pages read from
+    native_bridge.dart          Dart side of the MethodChannel
+    format.dart                 byte formatting
+  features/
+    dashboard/  junk/  apps/    one page each
+  widgets/                      DiskRing, SafetyBadge
+macos/Runner/
+  NativeBridge.swift            the only Swift: trash, FDA check, volume info,
+                                bundle info, reveal in Finder
+```
+
+## Adding a junk category
+
+Append a `ScanTarget` to `scanTargets` in `lib/core/scan_targets.dart`:
+
+```dart
+ScanTarget(
+  id: 'yarn',
+  title: 'Yarn Cache',
+  description: 'Downloaded packages.',
+  group: 'Developer',
+  paths: ['~/Library/Caches/Yarn'],
+  safety: Safety.rebuild,   // safe | rebuild | review (review = unchecked by default)
+  listChildren: false,      // true = each sub-folder becomes its own row
+),
+```
+
+No other code changes are needed.
+
+## Adding a native (Swift) call
+
+1. Add a `case "myMethod":` in `macos/Runner/NativeBridge.swift`.
+2. Add a static wrapper in `lib/core/native_bridge.dart`.
+
+## macOS config already applied
+
+- `macos/Runner/*.entitlements` — App Sandbox **off** (required to touch other apps' caches; not App Store-compatible).
+- `macos/Runner/Info.plist` — `LSUIElement = true` (menubar-only, no Dock icon).
+- `AppDelegate.swift` — app keeps running when the popover hides.
+- Full Disk Access is optional; the dashboard shows a banner with a deep link to the setting when it is off.
+
+## Distribution
+
+Direct download only (Developer ID signing + notarization). Not App Store-eligible because the sandbox is off.
