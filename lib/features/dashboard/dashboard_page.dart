@@ -7,6 +7,7 @@ import '../../theme/broom_theme.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/disk_ring.dart';
 import '../../widgets/glass.dart';
+import 'fda_guide.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key, required this.state, required this.onGoToJunk, required this.onGoToApps});
@@ -103,7 +104,7 @@ class DashboardPage extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          if (state.fullDiskAccess == false) const _FdaBanner(),
+          if (state.fullDiskAccess == false) _FdaBanner(onHelp: () => showFdaGuide(context, onGranted: state.refreshDisk)),
         ],
       ),
     );
@@ -178,7 +179,8 @@ class _ActionCardState extends State<_ActionCard> {
 }
 
 class _FdaBanner extends StatelessWidget {
-  const _FdaBanner();
+  const _FdaBanner({required this.onHelp});
+  final VoidCallback onHelp;
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
@@ -191,6 +193,8 @@ class _FdaBanner extends StatelessWidget {
           const Icon(CupertinoIcons.exclamationmark_triangle_fill, size: 16, color: Broom.amber),
           const SizedBox(width: 10),
           const Expanded(child: Text('Full Disk Access is off — some caches (Safari, Mail…) stay hidden.', style: Broom.caption)),
+          GradientButton(label: 'Show me how', icon: CupertinoIcons.question_circle_fill, onPressed: onHelp),
+          const SizedBox(width: 8),
           GhostButton(label: 'Open Settings', small: true, onPressed: NativeBridge.openFullDiskAccessSettings),
         ]),
       );
