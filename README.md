@@ -76,6 +76,30 @@ No other code changes are needed.
 - `AppDelegate.swift` — app keeps running when the popover hides.
 - Full Disk Access is optional; the dashboard shows a banner with a deep link to the setting when it is off.
 
-## Distribution
+## Release / Distribution
 
-Direct download only (Developer ID signing + notarization). Not App Store-eligible because the sandbox is off.
+```bash
+./scripts/release.sh
+```
+
+Produces `dist/MacBroom-<version>.dmg` (drag-to-Applications) and
+`dist/MacBroom-<version>.zip`. Version comes from `pubspec.yaml`.
+
+**Without an Apple Developer account** the app is ad-hoc signed: it runs, but
+Gatekeeper shows "cannot verify" on first launch — the user must right-click →
+Open once (or `xattr -d com.apple.quarantine MacBroom.app`).
+
+**With a Developer ID certificate** (Apple Developer Program, $99/yr):
+
+```bash
+# once: store notarization credentials in the keychain
+xcrun notarytool store-credentials macbroom \
+    --apple-id you@example.com --team-id TEAMID --password <app-specific-password>
+
+# every release: sign with Hardened Runtime, notarize, staple
+SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+NOTARY_PROFILE=macbroom ./scripts/release.sh
+```
+
+Not App Store-eligible: the App Sandbox is off so the app can reach other
+apps' caches.
