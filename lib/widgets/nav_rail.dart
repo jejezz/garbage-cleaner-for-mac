@@ -49,7 +49,8 @@ class _Logo extends StatelessWidget {
           borderRadius: BorderRadius.circular(13),
           boxShadow: Broom.glow(Broom.pink, blur: 22, alpha: 0.55),
         ),
-        child: const Icon(CupertinoIcons.wand_stars, size: 20, color: Color(0xFFFFFFFF)),
+        padding: const EdgeInsets.all(9),
+        child: Image.asset('assets/broom_glyph.png', filterQuality: FilterQuality.medium),
       );
 }
 
