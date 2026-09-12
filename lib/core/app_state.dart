@@ -66,6 +66,13 @@ class AppState extends ChangeNotifier {
 
   bool cleaning = false;
 
+  /// Bytes freed by the last clean; the UI shows a celebration while non-null.
+  int? lastFreed;
+  void dismissFreed() {
+    lastFreed = null;
+    notifyListeners();
+  }
+
   /// Moves selected items to the Trash (reversible). Returns bytes freed.
   Future<int> cleanSelected() async {
     cleaning = true;
@@ -79,6 +86,7 @@ class AppState extends ChangeNotifier {
     selected.retainAll(failed.keys);
     lastError = failed.isEmpty ? null : 'Could not remove ${failed.length} item(s): ${failed.values.first}';
     cleaning = false;
+    lastFreed = freed;
     notifyListeners();
     await refreshDisk();
     return freed;
@@ -133,9 +141,11 @@ class AppState extends ChangeNotifier {
     cleaning = true;
     notifyListeners();
     final paths = [...selectedLeftovers, if (removeAppBundle) app.info.path];
+    final freedBefore = uninstallBytes;
     final failed = await NativeBridge.moveToTrash(paths);
     lastError = failed.isEmpty ? null : 'Could not remove: ${failed.values.first}';
     cleaning = false;
+    if (failed.isEmpty) lastFreed = freedBefore;
     if (removeAppBundle && !failed.containsKey(app.info.path)) {
       apps.remove(app);
       selectedApp = null;

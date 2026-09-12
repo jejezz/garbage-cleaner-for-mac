@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:macos_ui/macos_ui.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -9,8 +10,12 @@ import 'core/app_state.dart';
 import 'features/apps/apps_page.dart';
 import 'features/dashboard/dashboard_page.dart';
 import 'features/junk/junk_page.dart';
+import 'theme/broom_theme.dart';
+import 'widgets/freed_overlay.dart';
+import 'widgets/nav_rail.dart';
 
-const _windowSize = Size(780, 540);
+const appName = 'MacBroom';
+const _windowSize = Size(820, 560);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,15 +30,16 @@ Future<void> main() async {
       windowButtonVisibility: false,
       skipTaskbar: true,
       alwaysOnTop: true,
+      backgroundColor: Color(0x00000000),
     ),
     () async => windowManager.hide(),
   );
 
   await trayManager.setIcon('assets/tray/tray_icon.png', isTemplate: true);
   await trayManager.setContextMenu(Menu(items: [
-    MenuItem(key: 'open', label: 'Open Garbage Cleaner'),
+    MenuItem(key: 'open', label: 'Open $appName'),
     MenuItem.separator(),
-    MenuItem(key: 'quit', label: 'Quit'),
+    MenuItem(key: 'quit', label: 'Quit $appName'),
   ]));
 
   runApp(const App());
@@ -112,49 +118,81 @@ class _AppState extends State<App> with TrayListener, WindowListener {
   @override
   Widget build(BuildContext context) {
     return MacosApp(
-      title: 'Garbage Cleaner',
+      title: appName,
       debugShowCheckedModeBanner: false,
-      theme: MacosThemeData.light(),
+      theme: MacosThemeData.dark(),
       darkTheme: MacosThemeData.dark(),
+      themeMode: ThemeMode.dark,
       home: ListenableBuilder(
         listenable: state,
-        builder: (context, _) => MacosWindow(
-          sidebar: Sidebar(
-            minWidth: 170,
-            top: const Padding(
-              padding: EdgeInsets.fromLTRB(12, 12, 12, 8),
-              child: Text('Garbage Cleaner', style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
-            builder: (context, scrollController) => SidebarItems(
-              currentIndex: page,
-              scrollController: scrollController,
-              onChanged: (i) => setState(() => page = i),
-              items: const [
-                SidebarItem(leading: MacosIcon(CupertinoIcons.chart_pie), label: Text('Disk')),
-                SidebarItem(leading: MacosIcon(CupertinoIcons.trash), label: Text('Junk')),
-                SidebarItem(leading: MacosIcon(CupertinoIcons.square_grid_2x2), label: Text('Apps')),
+        builder: (context, _) => DefaultTextStyle(
+          style: Broom.body,
+          child: Container(
+            decoration: const BoxDecoration(gradient: Broom.bgGradient),
+            child: Stack(
+              children: [
+                // Ambient color blobs behind the glass
+                const Positioned(top: -120, right: -80, child: _Blob(color: Broom.violet, size: 360)),
+                const Positioned(bottom: -140, left: 60, child: _Blob(color: Broom.cyan, size: 320)),
+                Row(
+                  children: [
+                    NavRail(
+                      index: page,
+                      onChanged: (i) => setState(() => page = i),
+                      items: const [
+                        NavItem(icon: CupertinoIcons.chart_pie_fill, label: 'Disk'),
+                        NavItem(icon: CupertinoIcons.sparkles, label: 'Junk'),
+                        NavItem(icon: CupertinoIcons.square_grid_2x2_fill, label: 'Apps'),
+                      ],
+                      onQuit: () => exit(0),
+                    ),
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 260),
+                        switchInCurve: Curves.easeOutCubic,
+                        transitionBuilder: (child, anim) => FadeTransition(
+                          opacity: anim,
+                          child: SlideTransition(
+                            position: Tween(begin: const Offset(0, 0.02), end: Offset.zero).animate(anim),
+                            child: child,
+                          ),
+                        ),
+                        child: KeyedSubtree(
+                          key: ValueKey(page),
+                          child: switch (page) {
+                            0 => DashboardPage(state: state, onGoToJunk: () => setState(() => page = 1), onGoToApps: () => setState(() => page = 2)),
+                            1 => JunkPage(state: state),
+                            _ => AppsPage(state: state),
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (state.lastFreed != null)
+                  Positioned.fill(child: FreedOverlay(bytes: state.lastFreed!, onDone: state.dismissFreed)),
               ],
             ),
-            bottom: Padding(
-              padding: const EdgeInsets.all(12),
-              child: PushButton(
-                controlSize: ControlSize.small,
-                secondary: true,
-                onPressed: () => exit(0),
-                child: const Text('Quit'),
-              ),
-            ),
-          ),
-          child: IndexedStack(
-            index: page,
-            children: [
-              DashboardPage(state: state, onGoToJunk: () => setState(() => page = 1)),
-              JunkPage(state: state),
-              AppsPage(state: state),
-            ],
           ),
         ),
       ),
     );
   }
+}
+
+class _Blob extends StatelessWidget {
+  const _Blob({required this.color, required this.size});
+  final Color color;
+  final double size;
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(colors: [color.withValues(alpha: 0.28), color.withValues(alpha: 0)]),
+          ),
+        ),
+      );
 }

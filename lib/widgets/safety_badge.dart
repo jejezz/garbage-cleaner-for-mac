@@ -1,28 +1,26 @@
-import 'package:flutter/material.dart' show Colors;
-import 'package:flutter/widgets.dart';
-import 'package:macos_ui/macos_ui.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../core/scan_targets.dart';
+import '../theme/broom_theme.dart';
+import 'glass.dart';
 
 class SafetyBadge extends StatelessWidget {
   const SafetyBadge(this.safety, {super.key});
   final Safety safety;
 
+  static Color colorOf(Safety s) => switch (s) {
+        Safety.safe => Broom.mint,
+        Safety.rebuild => Broom.amber,
+        Safety.review => Broom.rose,
+      };
+
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (safety) {
-      Safety.safe => ('Safe', Colors.green),
-      Safety.rebuild => ('Rebuilds', Colors.orange),
-      Safety.review => ('Review', Colors.red),
+    final (label, icon) = switch (safety) {
+      Safety.safe => ('SAFE', CupertinoIcons.checkmark_shield_fill),
+      Safety.rebuild => ('REBUILDS', CupertinoIcons.arrow_2_circlepath),
+      Safety.review => ('REVIEW', CupertinoIcons.eye_fill),
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(label,
-          style: MacosTheme.of(context).typography.caption2.copyWith(color: color)),
-    );
+    return Pill(label, color: colorOf(safety), icon: icon);
   }
 }

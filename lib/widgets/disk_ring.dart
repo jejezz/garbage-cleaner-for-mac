@@ -1,12 +1,13 @@
 import 'dart:math';
 
 import 'package:flutter/widgets.dart';
-import 'package:macos_ui/macos_ui.dart';
 
-/// Animated donut showing used / total. The [extra] arc previews how much
-/// would be freed by the current selection.
+import '../theme/broom_theme.dart';
+
+/// Glowing gradient donut. [extraRatio] previews how much of the used arc the
+/// current selection would free (drawn in the success gradient).
 class DiskRing extends StatelessWidget {
-  const DiskRing({super.key, required this.usedRatio, this.extraRatio = 0, required this.child, this.size = 160});
+  const DiskRing({super.key, required this.usedRatio, this.extraRatio = 0, required this.child, this.size = 180});
   final double usedRatio;
   final double extraRatio;
   final Widget child;
@@ -14,48 +15,80 @@ class DiskRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = MacosTheme.of(context);
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: usedRatio),
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1100),
       curve: Curves.easeOutCubic,
-      builder: (context, used, _) => CustomPaint(
-        size: Size.square(size),
-        painter: _RingPainter(
-          used: used,
-          extra: extraRatio.clamp(0, used),
-          track: theme.dividerColor,
-          fill: theme.primaryColor,
-          extraColor: const Color(0xFF34C759),
+      builder: (context, used, _) => TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: extraRatio.clamp(0, used)),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+        builder: (context, extra, _) => CustomPaint(
+          painter: _RingPainter(used: used, extra: extra),
+          child: SizedBox.square(dimension: size, child: Center(child: child)),
         ),
-        child: SizedBox.square(dimension: size, child: Center(child: child)),
       ),
     );
   }
 }
 
 class _RingPainter extends CustomPainter {
-  _RingPainter({required this.used, required this.extra, required this.track, required this.fill, required this.extraColor});
+  _RingPainter({required this.used, required this.extra});
   final double used, extra;
-  final Color track, fill, extraColor;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const stroke = 14.0;
-    final rect = Offset.zero & size;
-    final r = rect.deflate(stroke / 2);
-    final paint = Paint()
+    const stroke = 16.0;
+    final rect = (Offset.zero & size).deflate(stroke / 2 + 6);
+    final center = rect.center;
+    final start = -pi / 2;
+
+    // Track
+    canvas.drawArc(rect, 0, 2 * pi, false, Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(r, 0, 2 * pi, false, paint..color = track);
-    canvas.drawArc(r, -pi / 2, 2 * pi * used, false, paint..color = fill);
-    if (extra > 0) {
-      // Draw the "would be freed" slice at the end of the used arc.
-      canvas.drawArc(r, -pi / 2 + 2 * pi * (used - extra), 2 * pi * extra, false, paint..color = extraColor);
+      ..color = const Color(0x14FFFFFF));
+
+    // Used arc: gradient sweep + outer glow
+    final sweep = 2 * pi * used;
+    final grad = SweepGradient(
+      startAngle: 0,
+      endAngle: 2 * pi,
+      colors: const [Broom.cyan, Broom.violet, Broom.pink, Broom.cyan],
+      stops: const [0, 0.45, 0.85, 1],
+      transform: GradientRotation(start),
+    ).createShader(rect);
+
+    canvas.drawArc(rect, start, sweep, false, Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..shader = grad
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14)
+      ..color = const Color(0x80FFFFFF));
+    canvas.drawArc(rect, start, sweep, false, Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..shader = grad);
+
+    // Preview of what would be freed, at the tail of the used arc
+    if (extra > 0.002) {
+      final eSweep = 2 * pi * extra;
+      final ePaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..strokeCap = StrokeCap.round
+        ..shader = Broom.successGradient.createShader(rect);
+      canvas.drawArc(rect, start + sweep - eSweep, eSweep, false, ePaint..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10));
+      canvas.drawArc(rect, start + sweep - eSweep, eSweep, false, ePaint..maskFilter = null);
     }
+
+    // Inner soft disc for depth
+    canvas.drawCircle(center, rect.width / 2 - stroke, Paint()
+      ..shader = RadialGradient(colors: [Broom.violet.withValues(alpha: 0.18), const Color(0x00000000)]).createShader(rect));
   }
 
   @override
-  bool shouldRepaint(_RingPainter o) => o.used != used || o.extra != extra || o.fill != fill;
+  bool shouldRepaint(_RingPainter o) => o.used != used || o.extra != extra;
 }
