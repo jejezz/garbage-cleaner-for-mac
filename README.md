@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/dashboard.png" width="720" alt="MacBroom dashboard">
+  <img src="docs/screenshots/demo.gif" width="720" alt="MacBroom demo: scan, clean, done">
 </p>
 
 ## Features
@@ -34,7 +34,7 @@
 - **Guided setup** — a step-by-step walkthrough for granting Full Disk Access
 
 <p align="center">
-  <img src="docs/screenshots/junk.png" width="360" alt="Junk scan">
+  <img src="docs/screenshots/dashboard.png" width="360" alt="Dashboard">
   <img src="docs/screenshots/apps.png" width="360" alt="Uninstaller">
 </p>
 
