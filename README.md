@@ -1,15 +1,60 @@
-# MacBroom
+<p align="center">
+  <img src="macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png" width="128" alt="MacBroom icon">
+</p>
 
-CleanMyMac-style menubar app (**MacBroom**) built with **Flutter** (Dart UI) and a ~100-line
-**Swift bridge** for the few things Dart can't do on macOS.
+<h1 align="center">MacBroom</h1>
 
-- Junk scan & remove (caches, logs, Xcode / Gradle / pub / npm / Homebrew caches …)
-- Application remover with leftover detection (`~/Library/*` by bundle id)
-- Disk usage ring (Finder-accurate: purgeable space counts as free)
-- One-click menubar popover (no Dock icon)
-- Everything is **moved to the Trash**, never hard-deleted.
+<p align="center">
+  A free, open-source <b>CleanMyMac alternative for macOS</b> — a one-click menubar app that
+  clears caches and developer junk, uninstalls apps with their leftovers, and shows disk usage.
+</p>
 
-## Run
+<p align="center">
+  <a href="https://github.com/jejezz/garbage-cleaner-for-mac/releases/latest"><img src="https://img.shields.io/github/v/release/jejezz/garbage-cleaner-for-mac?style=flat-square&color=7c6cff" alt="Latest release"></a>
+  <a href="https://github.com/jejezz/garbage-cleaner-for-mac/releases"><img src="https://img.shields.io/github/downloads/jejezz/garbage-cleaner-for-mac/total?style=flat-square&color=e961ff" alt="Downloads"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%2012%2B-34e0ff?style=flat-square" alt="macOS 12+">
+  <img src="https://img.shields.io/badge/built%20with-Flutter-3df2b2?style=flat-square" alt="Flutter">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/jejezz/garbage-cleaner-for-mac?style=flat-square" alt="MIT license"></a>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" width="720" alt="MacBroom dashboard">
+</p>
+
+## Features
+
+- **Smart Scan** — finds junk by category with a safety rating (Safe / Rebuilds / Review):
+  user caches & logs, Xcode DerivedData, iOS DeviceSupport & simulators, Gradle, Dart pub,
+  CocoaPods, npm/Yarn/pnpm, Homebrew, pip …
+- **Uninstaller** — removes an app together with its leftovers in `~/Library`, matched by bundle id
+- **Disk gauge** — Finder-accurate usage ring (purgeable space counts as free) with a live preview of
+  how much the current selection would free
+- **Menubar app** — one click to open, no Dock icon, `Hide` to tuck it away
+- **Reversible** — everything is moved to the Trash, never hard-deleted
+- **Guided setup** — a step-by-step walkthrough for granting Full Disk Access
+
+<p align="center">
+  <img src="docs/screenshots/junk.png" width="360" alt="Junk scan">
+  <img src="docs/screenshots/apps.png" width="360" alt="Uninstaller">
+</p>
+
+## Install
+
+Download the latest `MacBroom-<version>.dmg` from
+[**Releases**](https://github.com/jejezz/garbage-cleaner-for-mac/releases/latest), open it and drag
+MacBroom to Applications.
+
+The app is not notarized yet, so on first launch **right-click MacBroom.app → Open → Open** once
+(or run `xattr -d com.apple.quarantine /Applications/MacBroom.app`). Then grant Full Disk Access
+when the banner appears — *Show me how* walks you through it.
+
+## Why Flutter?
+
+Dart drives the UI and all scanning logic; a ~100-line Swift bridge
+([`NativeBridge.swift`](macos/Runner/NativeBridge.swift)) covers the few things Dart can't do on
+macOS — move to Trash, Full Disk Access check, volume capacity, bundle info, reveal in Finder.
+
+## Development
 
 ```bash
 flutter run -d macos
@@ -105,3 +150,7 @@ NOTARY_PROFILE=macbroom ./scripts/release.sh
 
 Not App Store-eligible: the App Sandbox is off so the app can reach other
 apps' caches.
+
+## License
+
+[MIT](LICENSE)
