@@ -78,6 +78,8 @@ No other code changes are needed.
 
 ## Release / Distribution
 
+Step-by-step checklist: [docs/RELEASE.md](docs/RELEASE.md).
+
 ```bash
 ./scripts/release.sh
 ```
